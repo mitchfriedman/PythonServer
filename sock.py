@@ -1,5 +1,8 @@
 import socket
 from address import Address
+import sys
+import pickle
+import io
 
 
 class Socket(object):
@@ -33,24 +36,25 @@ class Socket(object):
         if socket is not None:
             self.socket.close()
 
-    def send(self, destination, data, size):
+    def send(self, destination, data):
         assert(data)
-        assert(size > 0)
         if not self.is_open():
             return False
     
         addr = str(destination.address)
         port = destination.port
     
-        data_as_bytes = data.encode('utf-8')
+        with open('serialize.txt', 'wb') as f:
+            pickle.dump(data, f)
 
-        sent_bytes = 0
+        contents = open('serialize.txt', 'rb').read()
+
         try:
-            sent_bytes = self.socket.sendto(data_as_bytes, (addr, port))
+            sent_bytes = self.socket.sendto(contents, (addr, port))
+            return True
         except Exception as e:
             print("Error sending bytes", e)
-        finally:
-            return sent_bytes == size
+            return False
 
     def receive(self, size):
         assert(size > 0)
@@ -62,6 +66,12 @@ class Socket(object):
             data, addr = self.socket.recvfrom(size)
             if not data or len(addr) < 2:
                 return False
+            
+            with open('contents.txt', 'wb') as f:
+                f.write(data)
+
+            with open('contents.txt', 'rb') as f:
+                deserialized = pickle.load(f)
 
             val = socket.inet_aton(addr[0])
             a = int(val[0])
@@ -71,7 +81,7 @@ class Socket(object):
 
             sender = Address(a=a,b=b,c=c,d=d, port=addr[1])
         except Exception as e:
-            data = None
+            deserialized = None
             sender = None
 
-        return data, sender
+        return deserialized, sender
