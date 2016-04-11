@@ -1,6 +1,3 @@
-import socket
-
-
 class Address(object):
     def __init__(self, a=None, b=None, c=None, d=None, port=None):
         self.a = a
@@ -10,6 +7,8 @@ class Address(object):
         
         if self.a:
             self._address = (a << 24) | (b << 16) | (c << 8) | d
+        else:
+            self._address = 0
 
         self._port = port or 0
 
